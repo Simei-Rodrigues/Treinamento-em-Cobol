@@ -1,0 +1,100 @@
+       ID DIVISION.
+       PROGRAM-ID.PROGSI01.
+       AUTHOR.     TECTREINOS.
+      *
+      *-------------------------------------------------*
+      *   VERIFICA SE NUMERO INFORMADO E PAR OU IMPAR   *
+      *-------------------------------------------------*
+      *
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+      *
+       77 WRK-NUMERO                   PIC 9(003) VALUE ZERO.
+       77 WRK-RESTO          COMP-3    PIC 9(003) VALUE ZERO.
+       77 WRK-RESULTADO      COMP-3    PIC 9(003) VALUE ZERO.
+       77 WRK-IMPAR          COMP-3    PIC 9(003) VALUE ZERO.
+       77 WRK-TOT-PAR        COMP-3    PIC 9(003) VALUE ZERO.
+      *
+       01 WRK-MSG-IMPAR.
+          05 FILLER                    PIC X(007) VALUE 'NUMERO '.
+          05 WRK-MSG-NUMERO            PIC 9(003) VALUE ZERO.
+          05 FILLER                    PIC X(006) VALUE ' IMPAR'.
+      *
+       01 WRK-DATA.
+          05 WRK-ANO                   PIC 9(004).
+          05 WRK-MES                   PIC 9(002).
+          05 WRK-DIA                   PIC 9(002).
+      *
+       01 WRK-HORARIO.
+          05 WRK-HOR                   PIC 9(002).
+          05 WRK-MIN                   PIC 9(002).
+          05 WRK-SEG                   PIC 9(002).
+      *
+       PROCEDURE DIVISION.
+      *
+       0000-INICIO.
+           PERFORM 1000-INICIAR.
+           PERFORM 2000-PROCESSAR
+             UNTIL WRK-NUMERO = 0.
+           PERFORM 3000-ENCERRAR.
+           STOP RUN.
+      *
+       1000-INICIAR.
+      *
+           DISPLAY 'PROGSI01 - INICIO DO PROCESSAMENTO'.
+           DISPLAY ' '
+      *
+           ACCEPT WRK-DATA    FROM DATE YYYYMMDD
+           ACCEPT WRK-HORARIO FROM TIME.
+      *
+           DISPLAY 'DATA: ' WRK-DIA '/' WRK-MES '/' WRK-ANO
+             ' - ' 'HORA: ' WRK-HOR ':' WRK-MIN ':' WRK-SEG.
+      *
+           DISPLAY ' '.
+      *
+           ACCEPT  WRK-NUMERO FROM SYSIN.
+      *
+       1000-FIM-INICIAR. EXIT.
+      *
+       2000-PROCESSAR.
+      *
+           IF  WRK-NUMERO NOT NUMERIC
+               DISPLAY 'INFORMACAO ' WRK-NUMERO ' INVALIDA. '
+                'PROGRAMA ENCERRADO'
+               MOVE 8                  TO RETURN-CODE
+               GOBACK
+           END-IF.
+      *
+           DIVIDE    WRK-NUMERO BY 2
+           GIVING    WRK-RESULTADO
+           REMAINDER WRK-RESTO.
+      *
+           IF  WRK-RESTO EQUAL ZERO
+               DISPLAY 'NUMERO ' WRK-NUMERO ' PAR'
+               ADD 1                   TO WRK-TOT-PAR
+           ELSE
+               MOVE WRK-NUMERO         TO WRK-MSG-NUMERO
+               DISPLAY  WRK-MSG-IMPAR
+               IF  WRK-NUMERO GREATER  WRK-IMPAR
+                   MOVE WRK-NUMERO     TO WRK-IMPAR
+               END-IF
+           END-IF.
+      *
+           ACCEPT WRK-NUMERO.
+      *
+       2000-FIM-PROCESSAR. EXIT.
+      *
+       3000-ENCERRAR.
+      *
+           DISPLAY ' '
+           DISPLAY 'MAIOR NUMERO IMPAR....: ' WRK-IMPAR
+           DISPLAY 'TOTAL DE NUMEROS PARES: ' WRK-TOT-PAR
+           DISPLAY ' '
+           DISPLAY 'PROGSI01 - FIM DO PROCESSAMENTO'.
+      *
+       3000-FIM-PROCESSAR. EXIT.

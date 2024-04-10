@@ -1,0 +1,225 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. PROGSI02.
+       AUTHOR. SIMEI.
+      *
+      ******************È*********************************************
+      * PROGRAMA PARA ENÈTRADA DE UM ARQUIVO DE CRIENTE DE UMA CONTA *
+      * E GERA A SAIDA COM OUTRO ARQUIVO DE SUPER CLIENTE.           *
+      ******************È*********************************************
+      *--------------------------------------------------------------*
+       ENVIRONMENT  DIVISION.
+      *--------------------------------------------------------------*
+      *
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT CADCLI ASSIGN TO ENTRADA
+                 FILE STATUS WS-FS-CLI.
+           SELECT CADSUP ASSIGN TO SAIDA
+                 FILE STATUS WS-FS-SUP.
+      *
+       DATA DIVISION.
+       FILE SECTION.
+      *
+       FD  CADCLI
+           RECORD CONTAINS 45 CHARACTERS
+           LABEL RECORD STANDARD
+           RECORDING MODE F
+           BLOCK CONTAINS 0 RECORDS
+           DATA RECORD    IS REG-CADCLI.
+      *
+       01 REG-CADCLI.
+           10 AGENCIA                 PIC 9(003).
+           10 CONTA                   PIC 9(003).
+           10 NOME                    PIC X(030).
+           10 SALDO                   PIC S9(007)V99.
+      *
+       FD CADSUP
+           LABEL RECORD IS STANDARD
+           RECORDING MODE IS F
+           BLOCK CONTAINS 0 RECORDS.
+      *
+       01 REG-CADSUP       PIC X(45).
+      *---------------------------------------*
+      * DEFINICAO DE VARIAVEIS DE TRABALHO    *
+      *---------------------------------------*
+       WORKING-STORAGE SECTION.
+      *
+       01  WS-FIM                        PIC X(003) VALUE 'NAO'.
+       01  WS-FS-CLI                     PIC X(002) VALUE SPACES.
+       01  WS-FS-SUP                     PIC X(002) VALUE SPACES.
+       01  WS-OPERACAO                   PIC X(008) VALUE SPACES.
+       01  WS-ARQUIVO                    PIC X(008) VALUE SPACES.
+       01  WS-FS-ARQ                     PIC X(002) VALUE SPACES.
+      *
+       01  WR-MENSAGEM1               PIC X(035) VALUE
+           'PROGSI01 - INICO DO PROCESSAMENTO'.
+      *
+       01  WS-MENSAGEM2               PIC X(035) VALUE
+           'PROGSI01 - PROCISSAMENTO ENCERRADO'.
+      *
+       01  WS-MENSAGEM3               PIC X(023) VALUE
+           'ARQUIVO CLIENTE VAZIO'.
+      *
+       01  WS-MENSAGEM4.
+           05 FILLER                  PIC X(030) VALUE
+           'TOTA DE REGISTROS LIDO..: '.
+           05 WS-LIDOS            PIC 9(003) VALUE ZEROS.
+      *
+       01  WS-MENSAGEM5.
+           05 FILLER                  PIC X(032) VALUE
+           'TOTAL DE RESGISTROS GRAVADOS..: '.
+           05 WS-GRAVADOS         PIC 9(003) VALUE ZEROS.
+      *
+       PROCEDURE DIVISION.
+      *
+      *--------------------------------------------------------*
+      * ESTRUTURA PRINCIPAL - CHAMADAS A ROTINAS               *
+      *--------------------------------------------------------*
+      *
+           PERFORM 1000-INICIAR.
+      *
+           PERFORM 3000-PROCESSAR
+               UNTIL WS-FS-CLI EQUAL '10'.
+      *
+           PERFORM 5000-FINALIZAR
+      *
+           STOP RUN.
+      *
+      *--------------------------------------------------------*
+      * ROTINA INICIAL - ABERTURA DE ARQUIVOS                  *
+      *--------------------------------------------------------*
+      *
+       1000-INICIAR.
+      *
+           DISPLAY WR-MENSAGEM1.
+           DISPLAY ' '.
+      *
+           OPEN INPUT CADCLI.
+      *
+           IF WS-FS-CLI NOT EQUAL '00'
+              MOVE 'CADCLI'   TO WS-ARQUIVO
+              MOVE 'OPEN'     TO WS-OPERACAO
+              MOVE WS-FS-CLI  TO WS-FS-ARQ
+              PERFORM 9000-ERRO-ARQ
+           END-IF.
+      *
+           OPEN OUTPUT CADSUP.
+      *
+           IF WS-FS-SUP NOT EQUAL '00'
+               MOVE 'CADSUP'   TO WS-ARQUIVO
+               MOVE 'OPEN'     TO WS-OPERACAO
+               MOVE WS-FS-SUP  TO WS-FS-ARQ
+               PERFORM 9000-ERRO-ARQ
+           END-IF.
+      *
+           PERFORM 2000-LER-ARQUIVO.
+      *
+           IF WS-FS-CLI EQUAL '00'
+               DISPLAY WS-MENSAGEM3
+               MOVE 4          TO RETURN-CODE
+           END-IF.
+      *
+       1000-FIM-INICIAR. EXIT.
+      *
+      *--------------------------------------------------------------*
+      * ROTINA LER-ARQUIVOS - LEITURA DO ARQUIVO CADCLI              *
+      *--------------------------------------------------------------*
+      *
+       2000-LER-ARQUIVO.
+      *
+           READ CADCLI.
+      *
+           IF WS-FS-CLI EQUAL '00' OR '10'
+               CONTINUE
+           ELSE
+               MOVE WS-FS-CLI  TO WS-FS-ARQ
+               MOVE 'CADCLI'   TO WS-ARQUIVO
+               MOVE 'OPEN'     TO WS-OPERACAO
+               PERFORM 9000-ERRO-ARQ
+           END-IF.
+      *
+       2000-FIM-LER-ARQUIVO. EXIT.
+      *
+      *--------------------------------------------------------------*
+      * ROTINA PROCESSAR - PROCESSA SUPER CLIENTES                   *
+      *--------------------------------------------------------------*
+      *
+       3000-PROCESSAR.
+      *
+           ADD 1               TO WS-LIDOS.
+      *
+           IF SALDO GREATER 100000,00
+              PERFORM 4000-GRAVAR
+           END-IF.
+      *
+           PERFORM 2000-LER-ARQUIVO.
+      *
+       3000-FIM-PRECESSAR. EXIT.
+      *
+      *--------------------------------------------------------------*
+      * ROTINA GRAVAR - GRAVA ARQUIVO DE SAIDA CADSUP                *
+      *--------------------------------------------------------------*
+      *
+       4000-GRAVAR.
+      *
+           MOVE REG-CADCLI    TO REG-CADSUP.
+      *
+           WRITE REG-CADSUP.
+      *
+           IF WS-FS-SUP NOT EQUAL '00'
+               MOVE 'CADSUP'  TO WS-ARQUIVO
+               MOVE 'OPEN'    TO WS-OPERACAO
+               MOVE WS-FS-SUP TO WS-FS-ARQ
+           END-IF.
+      *
+           ADD 1              TO WS-GRAVADOS.
+      *
+       4000-FIM-GRAVAR-ARQUIVOS. EXIT.
+      *
+      *--------------------------------------------------------------*
+      * ROTINA FINALIZAR - FECHA ARQUIVOS E EXIBE MSG DE ESTATISTICA *
+      *--------------------------------------------------------------*
+      *
+       5000-FINALIZAR.
+      *
+           DISPLAY WS-MENSAGEM4.
+      *
+           DISPLAY WS-MENSAGEM5.
+      *
+           CLOSE CADCLI.
+      *
+           IF WS-FS-CLI NOT EQUAL '00'
+               MOVE 'CLOSE'       TO WS-OPERACAO
+               MOVE 'CADCLI'      TO WS-ARQUIVO
+               MOVE WS-FS-CLI     TO WS-FS-ARQ
+               PERFORM 9000-ERRO-ARQ
+           END-IF.
+      *
+           CLOSE CADSUP.
+      *
+           IF WS-FS-CLI NOT EQUAL '00'
+               MOVE 'CLOSE'       TO WS-OPERACAO
+               MOVE 'CADCLI'      TO WS-ARQUIVO
+               MOVE WS-FS-CLI     TO WS-FS-ARQ
+               PERFORM 9000-ERRO-ARQ
+           END-IF.
+      *
+      *--------------------------------------------------------------*
+      * ROTINA ERRO-ARQ - TRATAMENTO DE ERROS COM ARQUIVOS           *
+      *--------------------------------------------------------------*
+      *
+       9000-ERRO-ARQ.
+      *
+           MOVE 12             TO RETURN-CODE.
+           DISPLAY 'ERRO NO PROCESSAMENTO'
+           DISPLAY 'ARQUIVO.: ' WS-ARQUIVO.
+           DISPLAY 'OPERACAO.: ' WS-OPERACAO.
+           DISPLAY 'FILE STATUS.: ' WS-FS-ARQ.
+           DISPLAY ' '.
+           DISPLAY 'FINAL DO PROCESSAMENTO'
+           STOP RUN.
+      *
